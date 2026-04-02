@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NutriDetect NLP</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #F0EDE6;
+    --card:      #FFFFFF;
+    --dark:      #1B1F1A;
+    --dark2:     #252922;
+    --accent:    #4C7C3F;
+    --muted:     #8A9186;
+    --border:    #DDD9CF;
+    --red-bg:    #FCEBEB;
+    --red-text:  #791F1F;
+    --grn-bg:    #EAF3DE;
+    --grn-text:  #27500A;
+    --tag-bg:    #E8E4DB;
+    --tag-text:  #5F5E5A;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Outfit', sans-serif;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: var(--dark); border-bottom: 1px solid #2a2e28;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #4C7C3F;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .brand-name { font-family: var(--mono); font-size: 14px; font-weight: 600; color: #EEF0E8; letter-spacing: .05em; }
+  .brand-sub { font-family: var(--mono); font-size: 9px; color: #506050; letter-spacing: .14em; margin-top: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 24px; font-family: var(--mono); font-size: 11px; color: #506050; letter-spacing: .08em; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #7EC86A; display: inline-block; margin-right: 6px; animation: blink 2.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .live-label { color: #C5CCBF; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 60px); }
+
+  .left { background: var(--dark); border-right: 1px solid #242824; display: flex; flex-direction: column; padding: 24px 20px; gap: 20px; }
+
+  .dropzone {
+    border: 1.5px dashed #3A4038; border-radius: var(--radius);
+    padding: 34px 16px; text-align: center; cursor: pointer;
+    background: #181C17; transition: border-color .2s, background .2s; display: block;
+  }
+  .dropzone:hover { border-color: #4C7C3F; background: #1C2419; }
+  .dz-icon { font-size: 22px; opacity: .4; margin-bottom: 10px; }
+  .dz-text { font-size: 13px; color: #7A8C76; font-weight: 500; }
+  .dz-sub { font-family: var(--mono); font-size: 9px; color: #445040; letter-spacing: .12em; margin-top: 5px; }
+
+
+
+  @keyframes up { to { opacity:1; transform:translateY(0); } }
+
+  .run-btn {
+    background: #222722; border: 1.5px solid #3A4038; color: #C5CCBF;
+    font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .14em;
+    padding: 15px 20px; border-radius: var(--radius); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: background .25s, border-color .25s, color .25s;
+  }
+  .run-btn:hover { background: #4C7C3F; border-color: #5D9B4E; color: #EAF3DE; }
+  .run-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .caps { border-top: 1px solid #252922; padding-top: 18px; }
+  .caps-title { font-family: var(--mono); font-size: 9px; letter-spacing: .16em; color: #445040; margin-bottom: 14px; }
+  .cap { display: flex; gap: 10px; margin-bottom: 9px; font-size: 12.5px; color: #7A8C76; align-items: flex-start; }
+  .cap .arr { font-family: var(--mono); color: #4C7C3F; font-size: 10px; margin-top: 2px; flex-shrink: 0; }
+
+  .right { background: var(--bg); padding: 30px 32px; overflow-y: auto; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 860px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    opacity: 0; transform: translateY(10px); animation: up .45s ease forwards;
+  }
+  .card:nth-child(1){ animation-delay:.08s; }
+  .card:nth-child(2){ animation-delay:.16s; }
+  .card:nth-child(3){ animation-delay:.24s; }
+  .card:nth-child(4){ animation-delay:.32s; }
+
+  .card-top { display: flex; align-items: center; justify-content: space-between; }
+  .card-name { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .07em; color: var(--dark); }
+
+  .badge { font-family: var(--mono); font-size: 8.5px; font-weight: 600; letter-spacing: .1em; padding: 4px 9px; border-radius: 4px; }
+  .b-def { background: var(--red-bg); color: var(--red-text); }
+  .b-nrm { background: var(--grn-bg); color: var(--grn-text); }
+  .b-not { background: var(--tag-bg); color: var(--tag-text); }
+
+  .ev { background: #F8F6F1; border-left: 3px solid #C9C5BC; border-radius: 0 6px 6px 0; padding: 10px 12px; font-family: var(--mono); font-size: 10.5px; color: #7A7060; line-height: 1.65; font-style: italic; }
+  .ev-icon { font-style: normal; color: #BBBAB0; margin-right: 5px; }
+
+  .rec { display: flex; flex-direction: column; gap: 5px; }
+  .rec-label { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; color: var(--accent); font-weight: 600; }
+  .rec-check { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--accent); }
+  .rec-text { font-size: 12.5px; color: #3A3830; line-height: 1.65; }
+
+  .rfoot { margin-top: 28px; max-width: 860px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .09em; color: #B5B0A5; text-align: center; }
+  .rfoot span { margin: 0 8px; color: #D0CBBF; }
+
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px; gap: 10px; opacity: 0; animation: up .5s ease .1s forwards; }
+  .empty-icon { font-size: 36px; opacity: .15; }
+  .empty-txt { font-family: var(--mono); font-size: 11px; color: #B5B0A5; letter-spacing: .08em; }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🔬</div>
+    <div>
+      <div class="brand-name">NUTRIDETECT NLP</div>
+      <div class="brand-sub">CLINICAL DEFICIENCY ANALYSIS SYSTEM V1.0</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span><span class="live-dot"></span><span class="live-label">SYSTEM ACTIVE</span></span>
+    <span id="utc">UTC: —</span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="left">
+    <label class="dropzone" for="file-in" id="dz">
+      <div class="dz-icon">⬆</div>
+      <div class="dz-text" id="dz-text">Drag &amp; drop or click to upload</div>
+      <div class="dz-sub">SUPPORTS JPG, PNG, PDF</div>
+    </label>
+    <input type="file" id="file-in" accept=".jpg,.jpeg,.png,.pdf"/>
+
+
+    <button class="run-btn" onclick="runAnalysis()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <span id="btn-label">RUN NLP ANALYSIS</span>
+    </button>
+
+    <div class="caps">
+      <div class="caps-title">SYSTEM CAPABILITIES</div>
+      <div class="cap"><span class="arr">›</span><span>Detects deficiencies in Iron, Vit D, B12, and Calcium</span></div>
+      <div class="cap"><span class="arr">›</span><span>Extracts evidence directly from unstructured text</span></div>
+      <div class="cap"><span class="arr">›</span><span>Provides context-aware clinical recommendations</span></div>
+    </div>
+  </div>
+
+  <div class="right" id="right">
+    <div class="empty" id="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-txt">UPLOAD A REPORT AND RUN ANALYSIS</div>
+    </div>
+    <div id="results" style="display:none;">
+      <div class="grid" id="grid"></div>
+      <div class="rfoot">
+        AI-GENERATED ANALYSIS <span>•</span> FOR PROFESSIONAL USE ONLY <span>•</span> VERIFY WITH CLINICAL DATA
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateClock() {
+    const n = new Date();
+    document.getElementById('utc').textContent = 'UTC: ' + [n.getUTCFullYear(), String(n.getUTCMonth()+1).padStart(2,'0'), String(n.getUTCDate()).padStart(2,'0')].join('-');
+  }
+  updateClock(); setInterval(updateClock, 60000);
+
+  const dz = document.getElementById('dz');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='#4C7C3F'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor=''; });
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor=''; });
+  document.getElementById('file-in').addEventListener('change', function() {
+    if (this.files[0]) { document.getElementById('dz-text').textContent = this.files[0].name; dz.style.borderColor='#4C7C3F'; }
+  });
+
+  const DATA = [
+    { name:'CALCIUM', badge:'DEFICIENT', bc:'b-def', ev:'"Calcium level is measured at 8.6 mg/dL — lower than the normal range of 8.5–10.2; patient experiences leg cramps."', rec:'Increase dietary calcium intake and engage in moderate weight-bearing exercise to strengthen bones.' },
+    { name:'IRON (FERRITIN)', badge:'NORMAL', bc:'b-nrm', ev:'"Ferritin level is recorded at 115 ng/mL, which falls within the standard reference range for adult males."', rec:'No specific recommendation; ferritin level is within the normal clinical range.' },
+    { name:'VITAMIN D', badge:'NOT MENTIONED', bc:'b-not', ev:'"No data or tests related to Vitamin D were included in the report."', rec:"Screening may be considered given the patient's age and focus on bone health." },
+    { name:'VITAMIN B12', badge:'NOT MENTIONED', bc:'b-not', ev:'"No data or tests related to Vitamin B12 were included in the report."', rec:'Maintain routine monitoring as part of geriatric health screenings.' }
+  ];
+
+  function runAnalysis() {
+    const lbl = document.getElementById('btn-label');
+    lbl.textContent = 'ANALYZING…';
+    document.getElementById('empty').style.display = 'none';
+    setTimeout(() => {
+      lbl.textContent = 'RUN NLP ANALYSIS';
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      DATA.forEach((d, i) => {
+        const c = document.createElement('div');
+        c.className = 'card';
+        c.style.animationDelay = (i * 0.09) + 's';
+        c.innerHTML = `<div class="card-top"><div class="card-name">${d.name}</div><div class="badge ${d.bc}">${d.badge}</div></div><div class="ev"><span class="ev-icon">ⓘ</span>${d.ev}</div><div class="rec"><div class="rec-label"><div class="rec-check">✓</div>CLINICAL RECOMMENDATION</div><div class="rec-text">${d.rec}</div></div>`;
+        grid.appendChild(c);
+      });
+      document.getElementById('results').style.display = 'block';
+    }, 1100);
+  }
+</script>
+</body>
+</html>
