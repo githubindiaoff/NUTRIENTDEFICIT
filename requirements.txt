@@ -1,0 +1,13 @@
+Flask
+tensorflow
+numpy
+joblib
+Pillow
+pdfplumber
+pytesseract
+transformers
+torch
+scikit-learn
+pandas
+datasets
+accelerate
